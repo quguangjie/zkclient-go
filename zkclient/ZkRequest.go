@@ -35,7 +35,7 @@ type ZkRequest struct {
 
 func NewZkRequest(name string, zkhosts string, ver int) *ZkRequest {
 	zkbase := newZkBase(zkhosts)
-	path := zkbase.getSerRegPath() + "/" + name + "/v" + strconv.Itoa(ver)
+	path := strings.Join([]string{zkbase.getSerRegPath(), "/", name, "/v", strconv.Itoa(ver)}, "")
 	zkrequest := &ZkRequest{zkBase: zkbase, reqName: name, fullPath: path}
 	zkbase.start()
 	zkrequest.registeWatcher(path, zkrequest)

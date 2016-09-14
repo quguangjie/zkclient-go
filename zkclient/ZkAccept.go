@@ -19,6 +19,7 @@ package zkclient
 import (
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 type ZkAccept struct {
@@ -29,14 +30,14 @@ type ZkAccept struct {
 
 func NewZkAccept(serName, nName, zkhosts string, ver int) *ZkAccept {
 	leader := NewZkLeader(serName, nName, zkhosts)
-	path := leader.getSerRegPath() + "/" + serName + "/v" + strconv.Itoa(ver)
+	path := strings.Join([]string{leader.getSerRegPath(), "/", serName, "/v", strconv.Itoa(ver)}, "")
 	zkaccept := &ZkAccept{ZkLeader: leader, acPath: path, nodeName: nName}
 	zkaccept.createPersistentPath(path)
 	return zkaccept
 }
 
 func (self *ZkAccept) Register() bool {
-	path := self.acPath + "/" + self.nodeName
+	path := strings.Join([]string{self.acPath, "/", self.nodeName}, "")
 	self.deletePath(path)
 	self.registeWatcher(path, self)
 	self.registeServer(self.acPath, self.nodeName, nil)
