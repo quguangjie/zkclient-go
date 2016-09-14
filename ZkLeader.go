@@ -16,7 +16,10 @@
  */
 package zkclient
 
-import ()
+import (
+	"sort"
+	"strings"
+)
 
 type ZkLeader struct {
 	*zkBase
@@ -28,26 +31,42 @@ type ZkLeader struct {
 
 func NewZkLeader(serName, nName, zkhosts string) *ZkLeader {
 	zkbase := newZkBase(zkhosts)
-	ldpath := zkbase.getLeaderPath() + "/" + serName
-	zkleader := &ZkLeader{zkBase: zkbase, ldPath: ldpath, nodeName: nName, lMode: false, children: []*ZkNode{}}
+	path := strings.Join([]string{zkbase.getLeaderPath(), "/", serName}, "")
+	zkleader := &ZkLeader{zkBase: zkbase, ldPath: path, nodeName: nName, lMode: false, children: []*ZkNode{}}
 	zkbase.start()
 	return zkleader
 }
+func DeleteZkLeader(l *ZkLeader) {
+	if l.lMode {
+		fullpath := strings.Join([]string{l.ldPath, "/", l.nodeName}, "")
+		l.deletePath(fullpath)
+	}
+}
 
-func (r *ZkLeader) IsLeader() bool {
+func (self *ZkLeader) IsLeader() bool {
+	children, err := self.getChildAndWatch(self.ldPath)
+	if err != nil {
+		return false
+	}
+	sort.Strings(children)
 	return false
 }
 
-func (r *ZkLeader) GetFollower() []*ZkNode {
-	return r.children
+func (self *ZkLeader) GetFollower() (bool, []*ZkNode) {
+	children, err := self.getChildAndWatch(self.ldPath)
+	if err != nil {
+		return false, nil
+	}
+	sort.Strings(children)
+	return true, self.children
 }
 
-func (r *ZkLeader) OnSessionExpired() {
+func (self *ZkLeader) OnSessionExpired() {
 	return
 }
-func (r *ZkLeader) DataChange(path string, bytes []byte) {
+func (self *ZkLeader) DataChange(path string, bytes []byte) {
 	return
 }
-func (r *ZkLeader) NodeChange(path string, eventType RegistryEvent, children []string) {
+func (self *ZkLeader) NodeChange(path string, eventType RegistryEvent, children []string) {
 	return
 }
